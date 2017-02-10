@@ -12,6 +12,9 @@ The following **required** functionality is complete:
 - [check] Poster images are loaded using the UIImageView category in the AFNetworking library.
 - [check] User sees a loading state while waiting for the movies API.
 - [check] User can pull to refresh the movie list.
+- [check] User get infinite scrolling if there is data
+- [check] User can get to more details of a picture
+- [check] User see the spining indicator upon refreshing by pulling down
 
 The following **optional** features are implemented:
 
@@ -34,7 +37,7 @@ Please list two areas of the assignment you'd like to **discuss further with you
 
 Here's a walkthrough of implemented user stories:
 
-<img src='https://github.com/sammanthp007/Tumblr-Feed/blob/master/workthrough.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' />
+<img src='https://github.com/sammanthp007/Tumblr-Feed/blob/master/workthrough%20week2.gif' title='Video Walkthrough' width='' alt='Video Walkthrough' />
 
 GIF created with [LiceCap](http://www.cockos.com/licecap/).
 
