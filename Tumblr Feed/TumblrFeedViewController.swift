@@ -9,7 +9,7 @@
 import UIKit
  import AFNetworking
 
-class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIScrollViewDelegate {
 
     @IBOutlet weak var tableView: UITableView!
     
@@ -157,7 +157,10 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
         task.resume()
     }
     
-    
+    // For infinite scrolling
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        // Handle scroll behavior here
+    }
     
     // MARK: - Navigation
 
