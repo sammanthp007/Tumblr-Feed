@@ -14,6 +14,8 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
     @IBOutlet weak var tableView: UITableView!
     
     var feeds: [NSDictionary]? = []
+    // initially know that the app has already made a network request
+    var isMoreDataLoading = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -59,7 +61,6 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
                     // This is where you will store the returned array of posts in your posts property
                     self.feeds = responseFieldDictionary["posts"] as! [NSDictionary]
                     
-                    
                     self.tableView.reloadData()
                 }
             }
@@ -81,19 +82,14 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
         let cell = tableView.dequeueReusableCell(withIdentifier: "FeedCell", for: indexPath) as! FeedCell
         
         let feed = feeds?[indexPath.row]
-        //print("feed: \(feed)")
         
         // get photos
-        let photos = feed?.value(forKeyPath: "photos") as? [NSDictionary]
-        
         if let photos = feed?.value(forKeyPath: "photos") as? [NSDictionary] {
             // photos is NOT nil, go ahead and access element 0 and run the code in the curly braces
-            //print("received photos")
             let imageUrlString = photos[0].value(forKeyPath: "original_size.url") as? String
             
             if let imageUrl = URL(string: imageUrlString!) {
                 // URL(string: imageUrlString!) is NOT nil, go ahead and unwrap it and assign it to imageUrl and run the code in the curly braces
-                print ("receied image url: \(imageUrl)")
                 
                 cell.posterView.setImageWith(imageUrl)
                 //self.tableView.reloadData()
@@ -137,7 +133,6 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
                 if let data = data {
                     if let responseDictionary = try! JSONSerialization.jsonObject(
                         with: data, options:[]) as? NSDictionary {
-                        //print("responseDictionary: \(responseDictionary)")
                         
                         // Recall there are two fields in the response dictionary, 'meta' and 'response'.
                         // This is how we get the 'response' field
@@ -157,9 +152,67 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
         task.resume()
     }
     
+    
+    func loadMoreData() {
+        // make an api call
+        let apiKey = "Q6vHoaVm5L1u2ZAW1fqv3Jw48gFzYVg9P0vH0VHl3GVy6quoGV"
+        
+        let url = URL(string:"https://api.tumblr.com/v2/blog/humansofnewyork.tumblr.com/posts/photo?api_key=\(apiKey)")
+        
+        let request = URLRequest(url: url!)
+        let session = URLSession(
+            configuration: URLSessionConfiguration.default,
+            delegate:nil,
+            delegateQueue:OperationQueue.main
+        )
+        
+        let task : URLSessionDataTask = session.dataTask(
+            with: request as URLRequest,
+            completionHandler: { (data, response, error) in
+                if let data = data {
+                    if let responseDictionary = try! JSONSerialization.jsonObject(
+                        with: data, options:[]) as? NSDictionary {
+                        
+                        // update the flag to stop making network call
+                        self.isMoreDataLoading = false
+                        
+                        // Recall there are two fields in the response dictionary, 'meta' and 'response'.
+                        // This is how we get the 'response' field
+                        let responseFieldDictionary = responseDictionary["response"] as! NSDictionary
+                        
+                        // This is where you will store the returned array of posts in your posts property
+                        self.feeds = responseFieldDictionary["posts"] as! [NSDictionary]
+                        self.tableView.reloadData()
+                    }
+                }
+        });
+        task.resume()
+    }
+    
+    
     // For infinite scrolling
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // Handle scroll behavior here
+        print ("entered scrollviewdidscroll")
+        
+        if (!isMoreDataLoading) {
+            print ("not ismoredataloading")
+        
+            // Calculate the position of one screen length before the bottom of the results
+            let scrollViewContentHeight = tableView.contentSize.height
+            let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height
+            
+            // When the user has scrolled past the threshold, start requesting
+            if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
+                self.isMoreDataLoading = true
+                
+                // make network call and load more data
+                loadMoreData()
+                
+            }
+        
+        
+        }
     }
     
     // MARK: - Navigation
@@ -176,7 +229,6 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
         let detailedViewController = segue.destination as! PhotoDetailsViewController
         
         detailedViewController.feed = feed
-        print ("\(feed)")
         // Get the new view controller using segue.destinationViewController.
         // Pass the selected object to the new view controller.
     }
