@@ -14,11 +14,27 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
     @IBOutlet weak var tableView: UITableView!
     
     var feeds: [NSDictionary]? = []
+    
     // initially know that the app has already made a network request
     var isMoreDataLoading = false
     
+    // for indicator for infinite scrolling
+    var loadingMoreView:InfiniteScrollIndicatorView?
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // for infinity scroll
+        // Set up Infinite Scroll loading indicator
+        let frame = CGRect(x: 0, y: tableView.contentSize.height, width: tableView.bounds.size.width, height: InfiniteScrollIndicatorView.defaultHeight)
+        loadingMoreView = InfiniteScrollIndicatorView(frame: frame)
+        loadingMoreView!.isHidden = true
+        tableView.addSubview(loadingMoreView!)
+        
+        var insets = tableView.contentInset;
+        insets.bottom += InfiniteScrollIndicatorView.defaultHeight;
+        tableView.contentInset = insets
         
         // Initialize a UIRefreshControl
         let refreshControl = UIRefreshControl()
@@ -165,7 +181,7 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
             delegate:nil,
             delegateQueue:OperationQueue.main
         )
-        
+                
         let task : URLSessionDataTask = session.dataTask(
             with: request as URLRequest,
             completionHandler: { (data, response, error) in
@@ -176,12 +192,18 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
                         // update the flag to stop making network call
                         self.isMoreDataLoading = false
                         
+                        // Stop the loading indicator
+                        self.loadingMoreView!.stopAnimating()
+                        
                         // Recall there are two fields in the response dictionary, 'meta' and 'response'.
                         // This is how we get the 'response' field
                         let responseFieldDictionary = responseDictionary["response"] as! NSDictionary
                         
+                        
                         // This is where you will store the returned array of posts in your posts property
                         self.feeds = responseFieldDictionary["posts"] as! [NSDictionary]
+                        
+                        print("data \(self.feeds )")
                         self.tableView.reloadData()
                     }
                 }
@@ -190,28 +212,30 @@ class TumblrFeedViewController: UIViewController, UITableViewDataSource, UITable
     }
     
     
-    // For infinite scrolling
+    // For everytime we scroll
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         // Handle scroll behavior here
-        print ("entered scrollviewdidscroll")
         
         if (!isMoreDataLoading) {
-            print ("not ismoredataloading")
-        
             // Calculate the position of one screen length before the bottom of the results
             let scrollViewContentHeight = tableView.contentSize.height
             let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height
             
             // When the user has scrolled past the threshold, start requesting
             if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
+                print("<>><><>><><><><><><>><><><><><>< making network calls here")
+                
                 self.isMoreDataLoading = true
                 
-                // make network call and load more data
+                // Update position of loadingMoreView, and start loading indicator
+                let frame = CGRect(x: 0, y: tableView.contentSize.height, width: tableView.bounds.size.width, height: InfiniteScrollIndicatorView.defaultHeight)
+                loadingMoreView?.frame = frame
+                loadingMoreView!.startAnimating()
+                
+                // Code to load more results through network call
                 loadMoreData()
                 
             }
-        
-        
         }
     }
     
